@@ -62,7 +62,7 @@ def create_datasets(tfrecord_path, batch_size, num_readers, config, only_test=Fa
   #  num_parallel_calls 处理数据的并发数
   dataset_test = dataset_test.map(tfrecord_parser_sequence(config), num_parallel_calls=num_readers)
   dataset_test = dataset_test.batch(batch_size_test)
-  dataset_test = dataset_test.prefetch(8 * batch_size_test)
+  dataset_test = dataset_test.prefetch(2 * batch_size_test)
 
   if only_test:
     return dataset_test
@@ -73,7 +73,7 @@ def create_datasets(tfrecord_path, batch_size, num_readers, config, only_test=Fa
     dataset_train = dataset_train.shuffle(buffer_size=10000)
     dataset_train = dataset_train.batch(batch_size)
     dataset_train = dataset_train.repeat()
-    dataset_train = dataset_train.prefetch(8 * batch_size)
+    dataset_train = dataset_train.prefetch(2 * batch_size)
 
     filenames_val = glob(tfrecord_path + '/val-*.tfrecord')
     dataset_val = tf.data.TFRecordDataset(filenames_val)
@@ -81,6 +81,6 @@ def create_datasets(tfrecord_path, batch_size, num_readers, config, only_test=Fa
     # NOTE: Do not shuffle validation set.
     dataset_val = dataset_val.batch(batch_size)
     dataset_val = dataset_val.repeat()
-    dataset_val = dataset_val.prefetch(8 * batch_size)
+    dataset_val = dataset_val.prefetch(2 * batch_size)
 
     return dataset_train, dataset_val, dataset_test

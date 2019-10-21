@@ -39,6 +39,9 @@ def model_fn(input_shape):
     model = proposed_CNN(input_shape,len(c.TAGS))
     print(model.summary())
 
+    # 加载预训练模型
+    # model.load_weights('./checkpoints/best_se.h5',by_name=True)
+
     num_params = int(sum([K.count_params(p) for p in set(model.trainable_weights)]))
     print(f"=>params:{num_params:,}")
 
@@ -105,6 +108,7 @@ def evaluate(model,dataset_test,config,classes=None):
     pred = tf.reduce_mean(pred_segs,axis=1)
 
     y_true,y_prob = [],[]
+    # class_rocaucs = []
     sess = K.get_session()
     bar = Bar('predicting..',max=config.num_test_audios,fill='#', suffix='%(percent)d%%')
     while True:
@@ -125,6 +129,20 @@ def evaluate(model,dataset_test,config,classes=None):
     acc = metrics.accuracy_score(y_true, y_pred)
 
     f1 = metrics.f1_score(y_true, y_pred, average='samples')
+    
+    cls_roc_aucs = []
+    cls_accs = [] 
+    if classes is not None:
+        print(f'\n=>individual scores of {len(classes)} classes')
+        for i,c in enumerate(classes):
+            cls_rocauc = metrics.roc_auc_score(y_true[:,i],y_prob[:,i])
+            cls_acc = metrics.accuracy_score(y_true[:,i],y_pred[:,i])
+            cls_roc_aucs.append(cls_rocauc)
+            cls_accs.append(cls_acc)
+            print(f'[{i:2} {c:30} rocauc={cls_rocauc:.4f} acc={cls_acc:.4f}]')
+        print()
+    np.save('./rocuac.npy',np.array(cls_roc_aucs))
+    np.save('./accs.npy',np.array(cls_accs))
 
     print(f'=> Test scores: rocauc={rocauc:.6f}\tprauc={prauc:.6f}\tacc={acc:.6f}\tf1={f1:.6f}')
 
